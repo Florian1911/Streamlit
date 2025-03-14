@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Chemin vers votre dépôt local
-REPO_PATH="C:/Users/florian1911/Documents/Streamlit" # Mettez votre chemin ici
+REPO_PATH="/c/Users/florian1911/Documents/Streamlit"
 
 # URL de votre dépôt GitHub
 REPO_URL="https://github.com/Florian1911/Streamlit.git"
@@ -37,6 +37,9 @@ if [[ -n $(git status --porcelain) ]]; then
 else
   echo "Aucune modification à commiter."
 fi
+
+# Récupérer et fusionner les modifications distantes
+git pull origin main || { echo "Erreur: Impossible de récupérer et fusionner les modifications distantes"; read -p "Appuyez sur Entrée pour continuer..."; exit 1; }
 
 # Pousser les modifications vers GitHub
 git push origin main || { echo "Erreur: Impossible de pousser les modifications"; read -p "Appuyez sur Entrée pour continuer..."; exit 1; }
