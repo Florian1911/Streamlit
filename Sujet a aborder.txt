@@ -1,0 +1,11 @@
+Phon
+loudness (intensité sonore)
+comment tracer la courbe
+
+
+
+
+
+Plan pour tracer les courbes :
+
+Il faut pour une fréquence fixe augmenter l'intensité jusqu'à ce qu'on entend

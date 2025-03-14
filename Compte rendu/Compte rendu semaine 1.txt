@@ -1,0 +1,20 @@
+Florian Lefebvre
+Projet : Loudness
+
+Lecture des 2 chapitres de signal processing.
+
+Actuellement, ma page streamlit est capable de :
+
+-Lecture d'un son parcourant un gamme de fréquence afin de testé la fréquence maximal et minimal pour l'individu.
+
+-Récupération du temps grâce à la bibliothèque "streamlit_advanced_audio" : https://github.com/keli-wen/streamlit-advanced-audio
+Qui me permet de récupérer la fréquence.
+
+-Sauvegarde de ces fréquences dans un tableau
+
+-Tracer la courbe isosonique sur base de la fréquence max et min via une approximation. 
+Explication reprise sur cette page : https://www.audiolabs-erlangen.de/resources/MIR/FMP/C1/C1S3_Dynamics.html
+
+-Reconstitution d'un son (il faut au moins avoir 2 valeurs dans le tableau avant de pouvoir écouter le son)
+
+Application déployé le 14-02-25 sous le lien : https://loudness.streamlit.app/
