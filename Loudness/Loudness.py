@@ -7,6 +7,8 @@ import librosa
 import soundfile as sf
 import io
 import libfmp.b
+from scipy.signal import butter, filtfilt
+from scipy.io.wavfile import write
 
 # Fonction pour générer le signal Chirp exponentiel
 def generate_chirp_exp(dur, freq_start, freq_end, Fs=44100):
@@ -18,6 +20,24 @@ def generate_chirp_exp(dur, freq_start, freq_end, Fs=44100):
         phases[n] = phases[n-1] + 2 * np.pi * freq[n-1] / Fs
     x = np.sin(phases)
     return x, t, freq
+
+def read_audio_from_wav(audio_file):
+    audio_file.seek(0)
+    signal, sample_rate = sf.read(audio_file)
+    return signal, sample_rate
+
+# Enregistrement du signal audio dans un fichier temporaire .wav
+def save_audio_to_wav(signal, sample_rate, filename="output.wav"):
+    """Sauvegarde le signal en fichier WAV sans le normaliser"""
+    signal_int16 = np.int16(signal)
+    write(filename, sample_rate, signal_int16)
+    return filename
+
+def save_audio_to_wav2(signal, sample_rate):
+    audio_file = io.BytesIO()
+    sf.write(audio_file, signal, sample_rate, format='WAV')
+    audio_file.seek(0)
+    return audio_file
 
 # Fréquence d'échantillonnage
 Fs = 44100
@@ -44,16 +64,8 @@ libfmp.b.plot_matrix(np.log(1 + np.abs(X)), Fs=Fs / H, Fs_F=N / Fs, ax=[ax],
 plt.tight_layout()
 st.pyplot(fig)
 
-# Enregistrement du signal audio dans un fichier temporaire .wav
-def save_audio_to_wav(signal, sample_rate=Fs):
-    # Créer un fichier temporaire en mémoire pour l'audio
-    audio_file = io.BytesIO()
-    sf.write(audio_file, signal, sample_rate, format='WAV')
-    audio_file.seek(0)
-    return audio_file
-
 # Lecture du son
-st.audio(save_audio_to_wav(x, Fs), format="audio/wav")
+st.audio(save_audio_to_wav2(x, Fs), format="audio/wav")
 
 # Test d'amplitude
 st.title("Loudness Test - Amplitude Perception")
@@ -63,77 +75,99 @@ FREQUENCIES = [125, 250, 500, 1000, 2000, 4000, 8000,10000,12000,14000, 16000]
 Fs = 44100  # Fréquence d'échantillonnage
 DURATION = 2  # Durée du son en secondes
 
+amplitudes_selectionnees_col1 = []
+amplitudes_selectionnees_col2 = []
+
 # Liste des amplitudes possibles
 amplitudes = [0.001, 0.01, 0.1, 0.5, 1, 2, 5]
 
 # Liste pour stocker les amplitudes sélectionnées
 amplitudes_selectionnees = []
 
-# Pour chaque fréquence, permettre la sélection d'une amplitude
-#for freq in FREQUENCIES:
-   # st.write(f"Fréquence: {freq} Hz")
-    #amplitude_selectionnee = st.selectbox(f"Amplitude pour {freq} Hz", amplitudes, index=3)  # Choix par défaut : 0.5
-    #amplitude_selectionnee = st.slider("Amplitude pour {freq}Hz",0,10,1)
-    #if amplitude_selectionnee is not None:
-        #amplitudes_selectionnees.append(amplitude_selectionnee)
-
-        # Générer le signal avec l'amplitude choisie
-        #temps = np.linspace(0, DURATION, int(Fs * DURATION), endpoint=False)
-        #signal = amplitude_selectionnee * np.sin(2 * np.pi * freq * temps)
-        
-        # Lecture du fichier audio dans Streamlit
-        #st.audio(signal,sample_rate=Fs)
-
+MAX_INT16 = 32767
 DURATION = 2
-for freq in FREQUENCIES:
-    st.write(f"Fréquence : {freq} Hz")
-    amplitude_selectionnee = st.slider(f"Amplitude pour {freq}Hz",0.0,10.0,1.0,step=0.1)
 
-    #echantillons = np.arange(0, DURATION, 1/Fs)
-    temps = np.linspace(0,2,10*Fs)
-    signal = amplitude_selectionnee * np.sin(2 * np.pi * freq * temps)
+col1, col2 = st.columns(2)
 
-    fig, ax = plt.subplots()
-    ax.plot(temps, signal,'xr')
-    ax.plot(temps, signal)
-    ax.set_xlabel('Temps (s)')
-    ax.set_ylabel('Amplitude')
-    ax.set_title(f'Signal pour {freq} Hz')
-    ax.set_xlim(0, 0.001)
-    ax.set_ylim(-1.1, 1.1)
-    st.pyplot(fig)
+with col1:
+    for i, freq in enumerate(FREQUENCIES):
+        st.write(f"Fréquence : {freq} Hz")
+
+        # Slider pour contrôler l'amplitude réelle du signal
+        amplitude_selectionnee = st.slider(
+            f"Amplitude pour {freq} Hz", min_value=0.0, max_value=1.0, value=0.1, step=0.01, key=f"col1_{i}"
+        )
+        amplitudes_selectionnees_col1.append(amplitude_selectionnee)
+
+        # Génération du signal avec l'amplitude choisie
+        temps = np.linspace(0, DURATION, int(Fs * DURATION), endpoint=False)
+        signal = amplitude_selectionnee * MAX_INT16 * np.sin(2 * np.pi * freq * temps)
+
+        # Sauvegarde du fichier audio avec l'amplitude réelle
+        audio_file = save_audio_to_wav(signal, Fs)
+
+        # Affichage de l'audio avec amplitude ajustable
+        st.audio(audio_file, format="audio/wav")
+        # Affichage de la courbe Amplitude vs Fréquence pour la première colonne
+    amplitudes_selectionnees_col1_db = 20 * np.log10(np.array(amplitudes_selectionnees_col1))
+
+    if len(amplitudes_selectionnees_col1) == len(FREQUENCIES):
+        st.write("Courbe de l'amplitude en fonction de la fréquence (Colonne 1)")
+        plt.figure(figsize=(8, 6))
+        plt.plot(FREQUENCIES, amplitudes_selectionnees_col1_db, marker='o', linestyle='-', color='b')
+        plt.xlabel("Fréquence (Hz)")
+        plt.ylabel("Amplitude (dB)")
+        plt.title("Courbe de l'Amplitude en fonction de la Fréquence (Colonne 1)")
+        plt.grid(True)
+        st.pyplot(plt)
+    else:
+        st.write("Veuillez sélectionner une amplitude pour chaque fréquence dans la colonne 1.")
+
+# Deuxième colonne
+with col2:
+    for i, freq in enumerate(FREQUENCIES):
+        st.write(f"Fréquence : {freq} Hz")
+
+        # Slider pour contrôler l'amplitude réelle du signal
+        amplitude_selectionnee = st.slider(
+            f"Amplitude pour {freq} Hz", min_value=0.0, max_value=1.0, value=0.1, step=0.01, key=f"col2_{i}"
+        )
+        amplitudes_selectionnees_col2.append(amplitude_selectionnee)
+
+        # Génération du signal avec l'amplitude choisie
+        temps = np.linspace(0, DURATION, int(Fs * DURATION), endpoint=False)
+        signal = amplitude_selectionnee * MAX_INT16 * np.sin(2 * np.pi * freq * temps)
+
+        # Sauvegarde du fichier audio avec l'amplitude réelle
+        audio_file = save_audio_to_wav(signal, Fs)
+
+        # Affichage de l'audio avec amplitude ajustable
+        st.audio(audio_file, format="audio/wav")
+        # Affichage de la courbe Amplitude vs Fréquence pour la deuxième colonne
+    amplitudes_selectionnees_col2_db = 20 * np.log10(np.array(amplitudes_selectionnees_col2))    
+    if len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
+        st.write("Courbe de l'amplitude en fonction de la fréquence (Colonne 2)")
+        plt.figure(figsize=(8, 6))
+        plt.plot(FREQUENCIES, amplitudes_selectionnees_col2, marker='o', linestyle='-', color='r')
+        plt.xlabel("Fréquence (Hz)")
+        plt.ylabel("Amplitude")
+        plt.title("Courbe de l'Amplitude en fonction de la Fréquence (Colonne 2)")
+        plt.grid(True)
+        st.pyplot(plt)
+    else:
+        st.write("Veuillez sélectionner une amplitude pour chaque fréquence dans la colonne 2.")
 
 
-
-    audio_file = save_audio_to_wav(signal, Fs)
-    st.audio(audio_file, format="audio/wav")  
-    st.audio(signal,sample_rate=Fs)
-
-    # Calculer la FFT du signal lu depuis le fichier
-    fft_signal = np.fft.fft(signal)
-    freqs = np.fft.fftfreq(len(fft_signal), 1/Fs)
-
-    # Tracer la FFT
-    fig, ax = plt.subplots()
-    ax.plot(freqs[:len(freqs)//2], np.abs(fft_signal)[:len(fft_signal)//2])
-    ax.set_xlabel('Fréquence (Hz)')
-    ax.set_ylabel('Amplitude')
-    ax.set_title(f'Spectre de fréquence pour {freq} Hz')
-    st.pyplot(fig)
-
-
-
-
-
-# Affichage de la courbe Amplitude vs Fréquence
-if len(amplitudes_selectionnees) == len(FREQUENCIES):
-    st.write("Courbe de l'amplitude en fonction de la fréquence")
+# Calculer la fonction de transfert entre les deux colonnes
+if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
+    transfer_function_db = amplitudes_selectionnees_col2_db - amplitudes_selectionnees_col1_db
+    st.write("Fonction de transfert entre les deux colonnes")
     plt.figure(figsize=(8, 6))
-    plt.plot(FREQUENCIES, amplitudes_selectionnees, marker='o', linestyle='-', color='b')
+    plt.plot(FREQUENCIES, transfer_function_db, marker='o', linestyle='-', color='g')
     plt.xlabel("Fréquence (Hz)")
-    plt.ylabel("Amplitude")
-    plt.title("Courbe de l'Amplitude en fonction de la Fréquence")
+    plt.ylabel("Différence d'Amplitude (dB)")
+    plt.title("Fonction de transfert entre les deux courbes")
     plt.grid(True)
     st.pyplot(plt)
 else:
-    st.write("Veuillez sélectionner une amplitude pour chaque fréquence.")
+    st.write("Veuillez sélectionner une amplitude pour chaque fréquence dans les deux colonnes.")

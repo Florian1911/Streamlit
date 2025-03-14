@@ -1,0 +1,3 @@
+On sauvegarde le fichier pour conserver l'amplitude du signal car st.audio ne permet pas d'écouter un tableau directement
+
+Ensuite on va filtrer le signal car on a des TDH lors de l'amplification
