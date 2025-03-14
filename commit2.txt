@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Chemin vers votre dépôt local
+REPO_PATH="/chemin/vers/votre/Streamlit"
+
+# URL de votre dépôt GitHub
+REPO_URL="https://github.com/Florian1911/Streamlit.git"
+
+# Message de commit
+COMMIT_MESSAGE="Mise à jour automatique"
+
+# Aller dans le répertoire du dépôt
+cd "$REPO_PATH" || exit
+
+# Vérifier si la branche "main" existe et y passer
+if git rev-parse --verify --quiet origin/main; then
+  git checkout main || exit
+else
+  git checkout -b main origin/master || exit
+fi
+
+# Ajouter tous les fichiers modifiés et non suivis
+git add . || exit
+
+# Commiter les modifications
+if git diff-index --quiet HEAD --; then
+  echo "Aucune modification à commiter."
+else
+  git commit -m "$COMMIT_MESSAGE" || exit
+fi
+
+# Pousser les modifications vers GitHub
+git push origin main || exit
+
+echo "Mise à jour réussie !"
