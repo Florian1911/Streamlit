@@ -38,11 +38,8 @@ else
   echo "Aucune modification à commiter."
 fi
 
-# Récupérer et fusionner les modifications distantes
-git pull origin main || { echo "Erreur: Impossible de récupérer et fusionner les modifications distantes"; read -p "Appuyez sur Entrée pour continuer..."; exit 1; }
-
-# Pousser les modifications vers GitHub
-git push origin main || { echo "Erreur: Impossible de pousser les modifications"; read -p "Appuyez sur Entrée pour continuer..."; exit 1; }
+# Pousser les modifications vers GitHub (force si nécessaire)
+git push -f origin main || { echo "Erreur: Impossible de pousser les modifications"; read -p "Appuyez sur Entrée pour continuer..."; exit 1; }
 echo "Modifications poussées."
 
 echo "Mise à jour réussie !"
