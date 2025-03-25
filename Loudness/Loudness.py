@@ -43,7 +43,6 @@ def save_audio_to_wav2(signal, sample_rate):
 Fs = 44100
 
 # Génération du signal Chirp exponentiel
-
 st.title("Chirp Exponentiel et Analyse")
 
 # Entrées de l'utilisateur pour personnaliser le signal Chirp
@@ -71,7 +70,7 @@ st.audio(save_audio_to_wav2(x, Fs), format="audio/wav")
 st.title("Loudness Test - Amplitude Perception")
 
 # Paramètres de fréquence et durée
-FREQUENCIES = [125, 250, 500, 1000, 2000, 4000, 8000,10000,12000,14000, 16000]
+FREQUENCIES = [125, 250, 500, 1000, 2000, 4000,6000, 8000,10000,12000,14000, 16000]
 Fs = 44100  # Fréquence d'échantillonnage
 DURATION = 2  # Durée du son en secondes
 
@@ -161,7 +160,7 @@ with col2:
 # Calculer la fonction de transfert entre les deux colonnes
 if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
     transfer_function_db = amplitudes_selectionnees_col2_db - amplitudes_selectionnees_col1_db
-    st.write("Fonction de transfert entre les deux colonnes")
+    st.title("Fonction de transfert entre les deux colonnes")
     plt.figure(figsize=(8, 6))
     plt.plot(FREQUENCIES, transfer_function_db, marker='o', linestyle='-', color='g')
     plt.xlabel("Fréquence (Hz)")
@@ -171,3 +170,8 @@ if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_sel
     st.pyplot(plt)
 else:
     st.write("Veuillez sélectionner une amplitude pour chaque fréquence dans les deux colonnes.")
+
+
+with st.expander("Explications"):
+    st.markdown('''La convolution numérique est définie comme''')
+    st.latex("y(n)=x(n)*h(n)=\sum_{k=-\infty}^{\infty}x(k)h(n-k)")
