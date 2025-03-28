@@ -9,6 +9,7 @@ import io
 import libfmp.b
 from scipy.signal import butter, filtfilt
 from scipy.io.wavfile import write
+st.set_page_config(layout="wide")
 
 # Fonction pour générer le signal Chirp exponentiel
 def generate_chirp_exp(dur, freq_start, freq_end, Fs=44100):
