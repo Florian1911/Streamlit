@@ -9,7 +9,6 @@ import io
 import libfmp.b
 from scipy.signal import butter, filtfilt
 from scipy.io.wavfile import write
-st.set_page_config(layout="wide")
 
 # Fonction pour générer le signal Chirp exponentiel
 def generate_chirp_exp(dur, freq_start, freq_end, Fs=44100):
@@ -43,13 +42,15 @@ def save_audio_to_wav2(signal, sample_rate):
 # Fréquence d'échantillonnage
 Fs = 44100
 
+st.title("Hear with my ears")
+
 # Génération du signal Chirp exponentiel
-st.title("Chirp Exponentiel et Analyse")
+st.header("Chirp Exponentiel et Analyse")
 
 # Entrées de l'utilisateur pour personnaliser le signal Chirp
-freq_start = st.slider("Fréquence de départ (Hz)", 10, 1000, 30)
-freq_end = st.slider("Fréquence de fin (Hz)", 1000, 20000, 10000)
-dur = st.slider("Durée (s)", 1, 20, 10)
+freq_start = st.slider("Fréquence de départ (Hz)", 10, 1000, 30,help="Sélectionnez la fréquence de départ du chirp exponentiel")
+freq_end = st.slider("Fréquence de fin (Hz)", 1000, 20000, 10000,help="Sélectionnez la fréquence de fin du chirp exponentiel")
+dur = st.slider("Durée (s)", 1, 20, 10,help="Sélectionnez la durée du chirp exponentiel")
 
 x, t, freq = generate_chirp_exp(dur, freq_start=freq_start, freq_end=freq_end, Fs=Fs)
 
@@ -68,7 +69,7 @@ st.pyplot(fig)
 st.audio(save_audio_to_wav2(x, Fs), format="audio/wav")
 
 # Test d'amplitude
-st.title("Loudness Test - Amplitude Perception")
+st.header("Loudness Test - Amplitude Perception",help="Sélectionnez l'amplitude du signal pour chaque fréquence afin que chaque signal soit perçu de la même amplitude")
 
 # Paramètres de fréquence et durée
 FREQUENCIES = [125, 250, 500, 1000, 2000, 4000,6000, 8000,10000,12000,14000, 16000]
@@ -95,7 +96,7 @@ with col1:
 
         # Slider pour contrôler l'amplitude réelle du signal
         amplitude_selectionnee = st.slider(
-            f"Amplitude pour {freq} Hz", min_value=0.0, max_value=1.0, value=0.1, step=0.01, key=f"col1_{i}"
+            f"Amplitude pour {freq} Hz", min_value=0.0, max_value=1.0, value=0.5, step=0.01, key=f"col1_{i}",help="Sélectionnez l'amplitude du signal pour cette fréquence"
         )
         amplitudes_selectionnees_col1.append(amplitude_selectionnee)
 
@@ -130,7 +131,7 @@ with col2:
 
         # Slider pour contrôler l'amplitude réelle du signal
         amplitude_selectionnee = st.slider(
-            f"Amplitude pour {freq} Hz", min_value=0.0, max_value=1.0, value=0.1, step=0.01, key=f"col2_{i}"
+            f"Amplitude pour {freq} Hz", min_value=0.0, max_value=1.0, value=0.5, step=0.01, key=f"col2_{i}",help="Sélectionnez l'amplitude du signal pour cette fréquence"
         )
         amplitudes_selectionnees_col2.append(amplitude_selectionnee)
 
@@ -148,9 +149,9 @@ with col2:
     if len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
         st.write("Courbe de l'amplitude en fonction de la fréquence (Colonne 2)")
         plt.figure(figsize=(8, 6))
-        plt.plot(FREQUENCIES, amplitudes_selectionnees_col2, marker='o', linestyle='-', color='r')
+        plt.plot(FREQUENCIES, amplitudes_selectionnees_col2_db, marker='o', linestyle='-', color='r')
         plt.xlabel("Fréquence (Hz)")
-        plt.ylabel("Amplitude")
+        plt.ylabel("Amplitude (dB)")
         plt.title("Courbe de l'Amplitude en fonction de la Fréquence (Colonne 2)")
         plt.grid(True)
         st.pyplot(plt)
@@ -161,7 +162,7 @@ with col2:
 # Calculer la fonction de transfert entre les deux colonnes
 if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
     transfer_function_db = amplitudes_selectionnees_col2_db - amplitudes_selectionnees_col1_db
-    st.title("Fonction de transfert entre les deux colonnes")
+    st.header("Fonction de transfert entre les deux colonnes")
     plt.figure(figsize=(8, 6))
     plt.plot(FREQUENCIES, transfer_function_db, marker='o', linestyle='-', color='g')
     plt.xlabel("Fréquence (Hz)")
@@ -169,8 +170,48 @@ if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_sel
     plt.title("Fonction de transfert entre les deux courbes")
     plt.grid(True)
     st.pyplot(plt)
-else:
-    st.write("Veuillez sélectionner une amplitude pour chaque fréquence dans les deux colonnes.")
+
+    st.header("Inverse FFT de la Fonction de Transfert")
+
+    # 1. Convertir la fonction de transfert de dB à l'échelle linéaire
+    transfer_function_linear = 10**(transfer_function_db / 20)
+
+    # 2. Créer un spectre symétrique
+    # On prend la moitié du spectre (fréquences positives)
+    positive_spectrum = transfer_function_linear
+
+    negative_spectrum = positive_spectrum[::-1] # On inverse l'ordre
+    positive_spectrum = np.insert(positive_spectrum, 0, 1)
+
+    negative_frequency = -np.array(FREQUENCIES[::-1])
+    positive_frequency = np.array(FREQUENCIES)
+    positive_frequency = np.insert(positive_frequency, 0, 0)
+    DOUBLE_FREQUENCIES = np.concatenate((negative_frequency,positive_frequency))
+
+    full_spectrum_linear = np.concatenate((negative_spectrum,positive_spectrum))
+
+    # Afficher le spectre symétrique
+    st.subheader("Spectre Symétrique Linéaire")
+    plt.figure(figsize=(8, 6))
+    plt.plot(DOUBLE_FREQUENCIES,full_spectrum_linear)
+    plt.xlabel("Fréquence (Hz)")
+    plt.ylabel("Amplitude")
+    plt.title("Spectre Symétrique")
+    plt.grid(True)
+    st.pyplot(plt)
+
+    # 4. Calculer l'IFFT
+    time_domain_response = np.fft.ifft(full_spectrum_linear)
+
+    # Afficher la réponse impulsionnelle
+    st.subheader("Réponse Impulsionnelle Estimée")
+    plt.figure(figsize=(8, 6))
+    plt.plot(np.real(time_domain_response))  # Afficher la partie réelle (la partie imaginaire devrait être proche de zéro)
+    plt.xlabel("Temps (échantillons)")
+    plt.ylabel("Amplitude")
+    plt.title("Réponse Impulsionnelle (IFFT de la Fonction de Transfert)")
+    plt.grid(True)
+    st.pyplot(plt)
 
 
 with st.expander("Explications"):
