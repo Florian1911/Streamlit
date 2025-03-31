@@ -33,12 +33,6 @@ def save_audio_to_wav(signal, sample_rate, filename="output.wav"):
     write(filename, sample_rate, signal_int16)
     return filename
 
-def save_audio_to_wav2(signal, sample_rate):
-    audio_file = io.BytesIO()
-    sf.write(audio_file, signal, sample_rate, format='WAV')
-    audio_file.seek(0)
-    return audio_file
-
 # Fréquence d'échantillonnage
 Fs = 44100
 
@@ -66,7 +60,7 @@ plt.tight_layout()
 st.pyplot(fig)
 
 # Lecture du son
-st.audio(save_audio_to_wav2(x, Fs), format="audio/wav")
+st.audio(x, sample_rate=Fs)
 
 # Test d'amplitude
 st.header("Loudness Test - Amplitude Perception",help="Sélectionnez l'amplitude du signal pour chaque fréquence afin que chaque signal soit perçu de la même amplitude")
