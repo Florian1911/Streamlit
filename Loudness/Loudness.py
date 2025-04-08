@@ -14,6 +14,13 @@ from scipy.signal import fftconvolve
 import tempfile
 import os
 
+# Chemin absolu depuis le fichier Python courant
+base_dir = os.path.dirname(__file__)
+audio_path = os.path.join(base_dir, "assets", "beth.wav")
+
+# Lecture du fichier audio
+st.audio(audio_path, format="audio/wav")
+sample_rate, data = wavfile.read(audio_path)
 
 
 # Fonction pour générer le signal Chirp exponentiel
