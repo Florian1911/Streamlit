@@ -18,11 +18,6 @@ import os
 base_dir = os.path.dirname(__file__)
 audio_path = os.path.join(base_dir, "assets", "beth.wav")
 
-# Lecture du fichier audio
-st.audio(audio_path, format="audio/wav")
-sample_rate, data = wavfile.read(audio_path)
-
-
 # Fonction pour générer le signal Chirp exponentiel
 def generate_chirp_exp(dur, freq_start, freq_end, Fs=44100):
     N = int(dur * Fs)
@@ -221,8 +216,8 @@ if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_sel
     st.pyplot(plt)
 
 st.subheader("🔊 Son original")
-st.audio("beth.wav", format="audio/wav")
-sample_rate, data = wavfile.read("beth.wav")
+st.audio(audio_path, format="audio/wav")
+sample_rate, data = wavfile.read(audio_path)
 convolved = fftconvolve(data.astype(np.float32), time_domain_response, mode="full")
 convolved = convolved / np.max(np.abs(convolved))
 convolved = (convolved * 32767).astype(np.int16)
