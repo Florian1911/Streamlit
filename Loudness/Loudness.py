@@ -9,6 +9,12 @@ import io
 import libfmp.b
 from scipy.signal import butter, filtfilt
 from scipy.io.wavfile import write
+from scipy.io import wavfile
+from scipy.signal import fftconvolve
+import tempfile
+import os
+
+
 
 # Fonction pour générer le signal Chirp exponentiel
 def generate_chirp_exp(dur, freq_start, freq_end, Fs=44100):
@@ -196,16 +202,29 @@ if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_sel
 
     # 4. Calculer l'IFFT
     time_domain_response = np.fft.ifft(full_spectrum_linear)
-
+    time_domain_response_db = 20 * np.log10(np.abs(time_domain_response))
     # Afficher la réponse impulsionnelle
     st.subheader("Réponse Impulsionnelle Estimée")
     plt.figure(figsize=(8, 6))
-    plt.plot(np.real(time_domain_response))  # Afficher la partie réelle (la partie imaginaire devrait être proche de zéro)
-    plt.xlabel("Temps (échantillons)")
-    plt.ylabel("Amplitude")
+    plt.plot((time_domain_response_db))
+    plt.xlabel("Temps")
+    plt.ylabel("Amplitude (dB)")
     plt.title("Réponse Impulsionnelle (IFFT de la Fonction de Transfert)")
     plt.grid(True)
     st.pyplot(plt)
+
+st.subheader("🔊 Son original")
+st.audio("beth.wav", format="audio/wav")
+sample_rate, data = wavfile.read("beth.wav")
+convolved = fftconvolve(data.astype(np.float32), time_domain_response, mode="full")
+convolved = convolved / np.max(np.abs(convolved))
+convolved = (convolved * 32767).astype(np.int16)
+
+with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
+    wavfile.write(tmpfile.name, sample_rate, convolved)
+    st.subheader("🔊 Résultat convolué")
+    st.audio(tmpfile.name, format="audio/wav")
+
 
 
 with st.expander("Explications"):
