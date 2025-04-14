@@ -162,70 +162,141 @@ with col2:
 
 
 # Calculer la fonction de transfert entre les deux colonnes
-if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
-    transfer_function_db = amplitudes_selectionnees_col2_db - amplitudes_selectionnees_col1_db
-    st.header("Fonction de transfert entre les deux colonnes")
-    plt.figure(figsize=(8, 6))
-    plt.plot(FREQUENCIES, transfer_function_db, marker='o', linestyle='-', color='g')
-    plt.xlabel("Fréquence (Hz)")
-    plt.ylabel("Différence d'Amplitude (dB)")
-    plt.title("Fonction de transfert entre les deux courbes")
-    plt.grid(True)
-    st.pyplot(plt)
+with col1:
+    if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
+        transfer_function_db1 = amplitudes_selectionnees_col2_db - amplitudes_selectionnees_col1_db
+        st.header("Différence d'amplitude à appliquer (2-1)")
+        plt.figure(figsize=(8, 6))
+        plt.plot(FREQUENCIES, transfer_function_db1, marker='o', linestyle='-', color='g')
+        plt.xlabel("Fréquence (Hz)")
+        plt.ylabel("Différence d'Amplitude (dB)")
+        plt.title("Différence d'amplitude à appliquer (2-1)")
+        plt.grid(True)
+        st.pyplot(plt)
 
-    st.header("Inverse FFT de la Fonction de Transfert")
+        st.header("Inverse FFT")
 
-    # 1. Convertir la fonction de transfert de dB à l'échelle linéaire
-    transfer_function_linear = 10**(transfer_function_db / 20)
+        # 1. Convertir la fonction de transfert de dB à l'échelle linéaire
+        transfer_function_linear1 = 10**(transfer_function_db1 / 20)
 
-    # 2. Créer un spectre symétrique
-    # On prend la moitié du spectre (fréquences positives)
-    positive_spectrum = transfer_function_linear
+        # 2. Créer un spectre symétrique
+        # On prend la moitié du spectre (fréquences positives)
+        positive_spectrum1 = transfer_function_linear1
 
-    negative_spectrum = positive_spectrum[::-1] # On inverse l'ordre
-    positive_spectrum = np.insert(positive_spectrum, 0, 1)
+        negative_spectrum1 = positive_spectrum1[::-1] # On inverse l'ordre
+        positive_spectrum1 = np.insert(positive_spectrum1, 0, 1)
 
-    negative_frequency = -np.array(FREQUENCIES[::-1])
-    positive_frequency = np.array(FREQUENCIES)
-    positive_frequency = np.insert(positive_frequency, 0, 0)
-    DOUBLE_FREQUENCIES = np.concatenate((negative_frequency,positive_frequency))
+        negative_frequency1 = -np.array(FREQUENCIES[::-1])
+        positive_frequency1= np.array(FREQUENCIES)
+        positive_frequency1 = np.insert(positive_frequency1, 0, 0)
+        DOUBLE_FREQUENCIES = np.concatenate((negative_frequency1,positive_frequency1))
 
-    full_spectrum_linear = np.concatenate((negative_spectrum,positive_spectrum))
+        full_spectrum_linear1 = np.concatenate((negative_spectrum1,positive_spectrum1))
 
-    # Afficher le spectre symétrique
-    st.subheader("Spectre Symétrique Linéaire")
-    plt.figure(figsize=(8, 6))
-    plt.plot(DOUBLE_FREQUENCIES,full_spectrum_linear)
-    plt.xlabel("Fréquence (Hz)")
-    plt.ylabel("Amplitude")
-    plt.title("Spectre Symétrique")
-    plt.grid(True)
-    st.pyplot(plt)
+        # Afficher le spectre symétrique
+        st.subheader("Spectre Symétrique Linéaire")
+        plt.figure(figsize=(8, 6))
+        plt.plot(DOUBLE_FREQUENCIES,full_spectrum_linear1)
+        plt.xlabel("Fréquence (Hz)")
+        plt.ylabel("Amplitude")
+        plt.title("Spectre Symétrique")
+        plt.grid(True)
+        st.pyplot(plt)
 
-    # 4. Calculer l'IFFT
-    time_domain_response = np.fft.ifft(full_spectrum_linear)
-    time_domain_response_db = 20 * np.log10(np.abs(time_domain_response))
-    # Afficher la réponse impulsionnelle
-    st.subheader("Réponse Impulsionnelle Estimée")
-    plt.figure(figsize=(8, 6))
-    plt.plot((time_domain_response_db))
-    plt.xlabel("Temps")
-    plt.ylabel("Amplitude (dB)")
-    plt.title("Réponse Impulsionnelle (IFFT de la Fonction de Transfert)")
-    plt.grid(True)
-    st.pyplot(plt)
+        # 4. Calculer l'IFFT
+        time_domain_response1 = np.fft.ifft(full_spectrum_linear1)
+        time_domain_response_db1 = 20 * np.log10(np.abs(time_domain_response1))
+        # Afficher la réponse impulsionnelle
+        st.subheader("Réponse Impulsionnelle Estimée")
+        plt.figure(figsize=(8, 6))
+        plt.plot((time_domain_response_db1))
+        plt.xlabel("Temps")
+        plt.ylabel("Amplitude (dB)")
+        plt.title("Réponse Impulsionnelle")
+        plt.grid(True)
+        st.pyplot(plt)
+
+
+with col2:
+    if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
+        transfer_function_db2 = amplitudes_selectionnees_col1_db - amplitudes_selectionnees_col2_db
+        st.header("Différence d'amplitude à appliquer (1-2)")
+        plt.figure(figsize=(8, 6))
+        plt.plot(FREQUENCIES, transfer_function_db2, marker='o', linestyle='-', color='g')
+        plt.xlabel("Fréquence (Hz)")
+        plt.ylabel("Différence d'Amplitude (dB)")
+        plt.title("Différence d'amplitude à appliquer (1-2)")
+        plt.grid(True)
+        st.pyplot(plt)
+
+        st.header("Inverse FFT")
+
+        # 1. Convertir la fonction de transfert de dB à l'échelle linéaire
+        transfer_function_linear2 = 10**(transfer_function_db2 / 20)
+
+        # 2. Créer un spectre symétrique
+        # On prend la moitié du spectre (fréquences positives)
+        positive_spectrum2 = transfer_function_linear2
+
+        negative_spectrum2 = positive_spectrum2[::-1] # On inverse l'ordre
+        positive_spectrum2 = np.insert(positive_spectrum2, 0, 1)
+
+        negative_frequency2 = -np.array(FREQUENCIES[::-1])
+        positive_frequency2= np.array(FREQUENCIES)
+        positive_frequency2 = np.insert(positive_frequency2, 0, 0)
+        DOUBLE_FREQUENCIES = np.concatenate((negative_frequency2,positive_frequency2))
+
+        full_spectrum_linear2 = np.concatenate((negative_spectrum2,positive_spectrum2))
+
+        # Afficher le spectre symétrique
+        st.subheader("Spectre Symétrique Linéaire")
+        plt.figure(figsize=(8, 6))
+        plt.plot(DOUBLE_FREQUENCIES,full_spectrum_linear2)
+        plt.xlabel("Fréquence (Hz)")
+        plt.ylabel("Amplitude")
+        plt.title("Spectre Symétrique")
+        plt.grid(True)
+        st.pyplot(plt)
+
+        # 4. Calculer l'IFFT
+        time_domain_response2 = np.fft.ifft(full_spectrum_linear2)
+        time_domain_response_db2 = 20 * np.log10(np.abs(time_domain_response2))
+        # Afficher la réponse impulsionnelle
+        st.subheader("Réponse Impulsionnelle Estimée")
+        plt.figure(figsize=(8, 6))
+        plt.plot((time_domain_response_db2))
+        plt.xlabel("Temps")
+        plt.ylabel("Amplitude (dB)")
+        plt.title("Réponse Impulsionnelle (IFFT de la Fonction de Transfert)")
+        plt.grid(True)
+        st.pyplot(plt)
 
 st.subheader("🔊 Son original")
 st.audio(audio_path, format="audio/wav")
 sample_rate, data = wavfile.read(audio_path)
-convolved = fftconvolve(data.astype(np.float32), time_domain_response, mode="full")
-convolved = convolved / np.max(np.abs(convolved))
-convolved = (convolved * 32767).astype(np.int16)
 
-with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
-    wavfile.write(tmpfile.name, sample_rate, convolved)
-    st.subheader("🔊 Résultat convolué")
-    st.audio(tmpfile.name, format="audio/wav")
+
+with col1:
+    convolved1 = fftconvolve(data.astype(np.float32), time_domain_response1, mode="full")
+    convolved1 = convolved1 / np.max(np.abs(convolved1))
+    convolved1 = (convolved1 * 32767).astype(np.int16)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
+        wavfile.write(tmpfile.name, sample_rate, convolved1)
+        st.subheader("🔊 Résultat convolué")
+        st.write("Audio perçu comme 2")
+        st.audio(tmpfile.name, format="audio/wav")
+
+with col2:
+    convolved2 = fftconvolve(data.astype(np.float32), time_domain_response2, mode="full")
+    convolved2 = convolved2 / np.max(np.abs(convolved2))
+    convolved2 = (convolved2 * 32767).astype(np.int16)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
+        wavfile.write(tmpfile.name, sample_rate, convolved2)
+        st.subheader("🔊 Résultat convolué")
+        st.write("Audio perçu comme 1")
+        st.audio(tmpfile.name, format="audio/wav")
 
 
 
