@@ -47,12 +47,13 @@ Fs = 44100
 st.title("Hear with my ears")
 
 # Génération du signal Chirp exponentiel
-st.header("Chirp Exponentiel et Analyse")
+st.header("Exponential Chirp and Analysis")
 
 # Entrées de l'utilisateur pour personnaliser le signal Chirp
-freq_start = st.slider("Fréquence de départ (Hz)", 10, 1000, 30,help="Sélectionnez la fréquence de départ du chirp exponentiel")
-freq_end = st.slider("Fréquence de fin (Hz)", 1000, 20000, 10000,help="Sélectionnez la fréquence de fin du chirp exponentiel")
-dur = st.slider("Durée (s)", 1, 20, 10,help="Sélectionnez la durée du chirp exponentiel")
+
+freq_start = 30
+freq_end=18000
+dur=10
 
 x, t, freq = generate_chirp_exp(dur, freq_start=freq_start, freq_end=freq_end, Fs=Fs)
 
@@ -71,7 +72,7 @@ st.pyplot(fig)
 st.audio(x, sample_rate=Fs)
 
 # Test d'amplitude
-st.header("Loudness Test - Amplitude Perception",help="Sélectionnez l'amplitude du signal pour chaque fréquence afin que chaque signal soit perçu de la même amplitude")
+st.header("Loudness Test - Amplitude Perception", help="Select the signal amplitude for each frequency so that each signal is perceived with the same amplitude")
 
 # Paramètres de fréquence et durée
 FREQUENCIES = [125, 250, 500, 1000, 2000, 4000,6000, 8000,10000,12000,14000, 16000]
@@ -94,11 +95,11 @@ col1, col2 = st.columns(2)
 
 with col1:
     for i, freq in enumerate(FREQUENCIES):
-        st.write(f"Fréquence : {freq} Hz")
+        st.write(f"Frequency : {freq} Hz")
 
         # Slider pour contrôler l'amplitude réelle du signal
         amplitude_selectionnee = st.slider(
-            f"Amplitude pour {freq} Hz", min_value=0.0, max_value=1.0, value=0.5, step=0.01, key=f"col1_{i}",help="Sélectionnez l'amplitude du signal pour cette fréquence"
+            f"Amplitude for {freq} Hz", min_value=0.0, max_value=1.0, value=0.5, step=0.01, key=f"col1_{i}",help="Select the signal amplitude for this frequency"
         )
         amplitudes_selectionnees_col1.append(amplitude_selectionnee)
 
@@ -115,25 +116,25 @@ with col1:
     amplitudes_selectionnees_col1_db = 20 * np.log10(np.array(amplitudes_selectionnees_col1))
 
     if len(amplitudes_selectionnees_col1) == len(FREQUENCIES):
-        st.write("Courbe de l'amplitude en fonction de la fréquence (Colonne 1)")
+        st.write("Amplitude versus frequency curve (Column 1)")
         plt.figure(figsize=(8, 6))
         plt.plot(FREQUENCIES, amplitudes_selectionnees_col1_db, marker='o', linestyle='-', color='b')
-        plt.xlabel("Fréquence (Hz)")
+        plt.xlabel("Frequency (Hz)")
         plt.ylabel("Amplitude (dB)")
-        plt.title("Courbe de l'Amplitude en fonction de la Fréquence (Colonne 1)")
+        plt.title("Amplitude versus frequency curve (Column 1)")
         plt.grid(True)
         st.pyplot(plt)
     else:
-        st.write("Veuillez sélectionner une amplitude pour chaque fréquence dans la colonne 1.")
+        st.write("Please select an amplitude for each frequency in column 1.")
 
 # Deuxième colonne
 with col2:
     for i, freq in enumerate(FREQUENCIES):
-        st.write(f"Fréquence : {freq} Hz")
+        st.write(f"Frequency : {freq} Hz")
 
         # Slider pour contrôler l'amplitude réelle du signal
         amplitude_selectionnee = st.slider(
-            f"Amplitude pour {freq} Hz", min_value=0.0, max_value=1.0, value=0.5, step=0.01, key=f"col2_{i}",help="Sélectionnez l'amplitude du signal pour cette fréquence"
+            f"Amplitude for {freq} Hz", min_value=0.0, max_value=1.0, value=0.5, step=0.01, key=f"col2_{i}",help="Select the signal amplitude for this frequency"
         )
         amplitudes_selectionnees_col2.append(amplitude_selectionnee)
 
@@ -149,28 +150,28 @@ with col2:
         # Affichage de la courbe Amplitude vs Fréquence pour la deuxième colonne
     amplitudes_selectionnees_col2_db = 20 * np.log10(np.array(amplitudes_selectionnees_col2))    
     if len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
-        st.write("Courbe de l'amplitude en fonction de la fréquence (Colonne 2)")
+        st.write("Amplitude versus frequency curve (Column 2)")
         plt.figure(figsize=(8, 6))
         plt.plot(FREQUENCIES, amplitudes_selectionnees_col2_db, marker='o', linestyle='-', color='r')
-        plt.xlabel("Fréquence (Hz)")
+        plt.xlabel("Frequency (Hz)")
         plt.ylabel("Amplitude (dB)")
-        plt.title("Courbe de l'Amplitude en fonction de la Fréquence (Colonne 2)")
+        plt.title("Amplitude versus frequency curve (Column 2)")
         plt.grid(True)
         st.pyplot(plt)
     else:
-        st.write("Veuillez sélectionner une amplitude pour chaque fréquence dans la colonne 2.")
+        st.write("Please select an amplitude for each frequency in column 2.")
 
 
 # Calculer la fonction de transfert entre les deux colonnes
 with col1:
     if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
         transfer_function_db1 = amplitudes_selectionnees_col2_db - amplitudes_selectionnees_col1_db
-        st.header("Différence d'amplitude à appliquer (2-1)")
+        st.header("Amplitude difference to be applied (2-1)")
         plt.figure(figsize=(8, 6))
         plt.plot(FREQUENCIES, transfer_function_db1, marker='o', linestyle='-', color='g')
-        plt.xlabel("Fréquence (Hz)")
-        plt.ylabel("Différence d'Amplitude (dB)")
-        plt.title("Différence d'amplitude à appliquer (2-1)")
+        plt.xlabel("Frequency (Hz)")
+        plt.ylabel("Amplitude Difference (dB)")
+        plt.title("Amplitude difference to be applied (2-1)")
         plt.grid(True)
         st.pyplot(plt)
 
@@ -194,12 +195,12 @@ with col1:
         full_spectrum_linear1 = np.concatenate((negative_spectrum1,positive_spectrum1))
 
         # Afficher le spectre symétrique
-        st.subheader("Spectre Symétrique Linéaire")
+        st.subheader("Linear Symmetric Spectrum")
         plt.figure(figsize=(8, 6))
         plt.plot(DOUBLE_FREQUENCIES,full_spectrum_linear1)
-        plt.xlabel("Fréquence (Hz)")
+        plt.xlabel("Frequency (Hz)")
         plt.ylabel("Amplitude")
-        plt.title("Spectre Symétrique")
+        plt.title("Linear Spectrum")
         plt.grid(True)
         st.pyplot(plt)
 
@@ -207,12 +208,12 @@ with col1:
         time_domain_response1 = np.fft.ifft(full_spectrum_linear1)
         time_domain_response_db1 = 20 * np.log10(np.abs(time_domain_response1))
         # Afficher la réponse impulsionnelle
-        st.subheader("Réponse Impulsionnelle Estimée")
+        st.subheader("Estimated Impulse Response")
         plt.figure(figsize=(8, 6))
         plt.plot((time_domain_response_db1))
-        plt.xlabel("Temps")
+        plt.xlabel("Time")
         plt.ylabel("Amplitude (dB)")
-        plt.title("Réponse Impulsionnelle")
+        plt.title("Impulse Response")
         plt.grid(True)
         st.pyplot(plt)
 
@@ -220,12 +221,12 @@ with col1:
 with col2:
     if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
         transfer_function_db2 = amplitudes_selectionnees_col1_db - amplitudes_selectionnees_col2_db
-        st.header("Différence d'amplitude à appliquer (1-2)")
+        st.header("Amplitude difference to be applied (1-2)")
         plt.figure(figsize=(8, 6))
         plt.plot(FREQUENCIES, transfer_function_db2, marker='o', linestyle='-', color='g')
-        plt.xlabel("Fréquence (Hz)")
-        plt.ylabel("Différence d'Amplitude (dB)")
-        plt.title("Différence d'amplitude à appliquer (1-2)")
+        plt.xlabel("Frequency (Hz)")
+        plt.ylabel("Amplitude Difference (dB)")
+        plt.title("Amplitude difference to be applied (1-2)")
         plt.grid(True)
         st.pyplot(plt)
 
@@ -249,12 +250,12 @@ with col2:
         full_spectrum_linear2 = np.concatenate((negative_spectrum2,positive_spectrum2))
 
         # Afficher le spectre symétrique
-        st.subheader("Spectre Symétrique Linéaire")
+        st.subheader("Linear Symmetric Spectrum")
         plt.figure(figsize=(8, 6))
         plt.plot(DOUBLE_FREQUENCIES,full_spectrum_linear2)
-        plt.xlabel("Fréquence (Hz)")
+        plt.xlabel("Frequency (Hz)")
         plt.ylabel("Amplitude")
-        plt.title("Spectre Symétrique")
+        plt.title("Symetric Spectrum")
         plt.grid(True)
         st.pyplot(plt)
 
@@ -262,44 +263,35 @@ with col2:
         time_domain_response2 = np.fft.ifft(full_spectrum_linear2)
         time_domain_response_db2 = 20 * np.log10(np.abs(time_domain_response2))
         # Afficher la réponse impulsionnelle
-        st.subheader("Réponse Impulsionnelle Estimée")
+        st.subheader("Estimated Impulse Response")
         plt.figure(figsize=(8, 6))
         plt.plot((time_domain_response_db2))
-        plt.xlabel("Temps")
+        plt.xlabel("Time")
         plt.ylabel("Amplitude (dB)")
-        plt.title("Réponse Impulsionnelle (IFFT de la Fonction de Transfert)")
+        plt.title("Impulse Response")
         plt.grid(True)
         st.pyplot(plt)
 
-st.subheader("🔊 Son original")
+
+st.subheader("🔊 Original sound")
 st.audio(audio_path, format="audio/wav")
 sample_rate, data = wavfile.read(audio_path)
 
 
 with col1:
-    convolved1 = fftconvolve(data.astype(np.float32), time_domain_response1, mode="full")
-    convolved1 = convolved1 / np.max(np.abs(convolved1))
-    convolved1 = (convolved1 * 32767).astype(np.int16)
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
-        wavfile.write(tmpfile.name, sample_rate, convolved1)
-        st.subheader("🔊 Résultat convolué")
-        st.write("Audio perçu comme 2")
-        st.audio(tmpfile.name, format="audio/wav")
+    convolved1 = fftconvolve(data, time_domain_response1, mode="full")
+    st.subheader("🔊 Convolved result")
+    st.write("Audio perceived as 2")
+    st.audio(convolved1,sample_rate=Fs)
 
 with col2:
     convolved2 = fftconvolve(data.astype(np.float32), time_domain_response2, mode="full")
-    convolved2 = convolved2 / np.max(np.abs(convolved2))
-    convolved2 = (convolved2 * 32767).astype(np.int16)
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
-        wavfile.write(tmpfile.name, sample_rate, convolved2)
-        st.subheader("🔊 Résultat convolué")
-        st.write("Audio perçu comme 1")
-        st.audio(tmpfile.name, format="audio/wav")
-
+    st.subheader("🔊 Convolved result")
+    st.write("Audio perceived as 1")
+    st.audio(convolved2,sample_rate=Fs)
 
 
 with st.expander("Explications"):
     st.markdown('''La convolution numérique est définie comme''')
     st.latex("y(n)=x(n)*h(n)=\sum_{k=-\infty}^{\infty}x(k)h(n-k)")
+
