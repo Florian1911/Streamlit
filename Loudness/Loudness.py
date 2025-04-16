@@ -46,7 +46,18 @@ Fs = 44100
 
 st.title("Hear with my ears")
 
-st.write("Rajouter une introduction")
+st.markdown("""
+### 🎯 Goal:
+Compare how two people perceive the same sounds differently. This application allows one person to hear how the other person experiences sound.
+
+### 🧪 Steps:
+- An **exponential chirp signal** (a sweep through frequencies) is generated to analyze the overall frequency spectrum.
+- For each frequency, both individuals adjust the amplitude so the sound feels equally loud to them.
+- The generated curves show the differences in perception between the two columns.
+- A transfer function is calculated and then **applied to a real audio sample** to simulate how it would be perceived by the other person.
+
+Take your time to listen to each frequency, adjust based on your perception, and observe how it affects the final sound output!
+""")
 
 # Génération du signal Chirp exponentiel
 st.header("Exponential Chirp and Analysis")
@@ -74,7 +85,7 @@ st.pyplot(fig)
 st.audio(x, sample_rate=Fs)
 
 # Test d'amplitude
-st.header("Loudness Test - Amplitude Perception", help="Select the signal amplitude for each frequency so that each signal is perceived with the same amplitude")
+st.header("Loudness Test - Amplitude Perception", help="Adjust the amplitude so that each frequency sounds equally loud to you.")
 
 # Paramètres de fréquence et durée
 FREQUENCIES = [125, 250, 500, 1000, 2000, 4000,6000, 8000,10000,12000,14000, 16000]
@@ -284,8 +295,6 @@ col3,col4=st.columns(2)
 
 with col3:
     st.subheader("🔊 Convolt result")
-    st.write("Son a tester")
-    st.write("Convolution du son original avec la valeur en dB de la première colonne (le premier graphique)")
     convolved11=fftconvolve(data,amplitudes_selectionnees_col1_db,mode="full")
 
     plt.figure(figsize=(8, 6))
@@ -299,7 +308,6 @@ with col3:
 
     st.audio(convolved11,sample_rate=Fs)
 
-    #On veut equal loudness ou equal db ?
     convolved1 = fftconvolve(data, time_domain_response1, mode="full")
     st.subheader("🔊 Convolved result")
     st.write("Audio perceived as 2")
@@ -308,8 +316,6 @@ with col3:
 with col4:
     st.subheader("🔊 Convolt result")
     convolved22 = fftconvolve(data,amplitudes_selectionnees_col2_db) 
-
-    st.write("Son a tester")
     
 
     plt.figure(figsize=(8, 6))
@@ -330,7 +336,41 @@ with col4:
     st.audio(convolved2,sample_rate=Fs)
 
 
-with st.expander("Explications"):
-    st.markdown('''La convolution numérique est définie comme''')
-    st.latex("y(n)=x(n)*h(n)=\sum_{k=-\infty}^{\infty}x(k)h(n-k)")
+with st.expander("📘 Theory explanations"):
+    st.markdown("### 🎧 Why Fourier Transform?")
+    st.markdown("""
+To simulate how someone else hears, we analyze differences in sound perception **in the frequency domain** using the Discrete Fourier Transform (DFT):
+""")
+    st.latex(r"X[k] = \sum_{n=0}^{N-1} x[n] \cdot e^{-j 2\pi k n / N}")
+    st.markdown(r"""
+- \( x[n] \): audio signal in time domain  
+- \( X[k] \): frequency components  
+- \( N \): number of samples
+""")
 
+    st.markdown("---")
+    st.markdown("### 🔄 Transfer Function")
+    st.markdown("""
+Once both users have adjusted how loud each frequency feels to them, we compute the difference in decibels:
+""")
+    st.latex(r"\Delta A_{\text{dB}}(f) = 20 \cdot \log_{10}\left(\frac{A_2(f)}{A_1(f)}\right)")
+
+    st.markdown("""
+This gives us the **difference in perception** for each frequency \( f \). We convert this to a linear scale:
+""")
+    st.latex(r"H(f) = 10^{\Delta A_{\text{dB}}(f)/20}")
+    st.markdown("""
+\( H(f) \) is the **transfer function**, a filter that transforms audio from one hearing profile to the other.
+""")
+
+    st.markdown("---")
+    st.markdown("### ⏪ Back to Time Domain")
+    st.markdown("To apply this filter to a real sound, we convert \( H(f) \) back to the **time domain** using the inverse Fourier transform:")
+    st.latex(r"h[n] = \text{IFFT}(H(f))")
+
+    st.markdown("---")
+    st.markdown("### 🔊 Final Step: Convolution")
+    st.markdown("We apply the filter by convolving the real audio signal \( x[n] \) with the impulse response \( h[n] \):")
+    st.latex(r"y[n] = x[n] * h[n] = \sum_{k=-\infty}^{\infty} x[k] \cdot h[n-k]")
+
+    st.markdown("This results in a new sound 𝑦[𝑛]y[n]: the original audio, transformed to simulate how the other person would perceive it.")
