@@ -46,6 +46,8 @@ Fs = 44100
 
 st.title("Hear with my ears")
 
+st.write("Rajouter une introduction")
+
 # Génération du signal Chirp exponentiel
 st.header("Exponential Chirp and Analysis")
 
@@ -273,19 +275,56 @@ with col2:
         st.pyplot(plt)
 
 
+
 st.subheader("🔊 Original sound")
 st.audio(audio_path, format="audio/wav")
 sample_rate, data = wavfile.read(audio_path)
 
+col3,col4=st.columns(2)
 
-with col1:
+with col3:
+    st.subheader("🔊 Convolt result")
+    st.write("Son a tester")
+    st.write("Convolution du son original avec la valeur en dB de la première colonne (le premier graphique)")
+    convolved11=fftconvolve(data,amplitudes_selectionnees_col1_db,mode="full")
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(20*np.log10(np.abs(convolved11)))
+    plt.xlim(0,10000)
+    plt.xlabel("Time")
+    plt.ylabel("Amplitude (dB)")
+    plt.title("Convolved original sound with 1")
+    plt.grid(True)
+    st.pyplot(plt)
+
+    st.audio(convolved11,sample_rate=Fs)
+
+    #On veut equal loudness ou equal db ?
     convolved1 = fftconvolve(data, time_domain_response1, mode="full")
     st.subheader("🔊 Convolved result")
     st.write("Audio perceived as 2")
     st.audio(convolved1,sample_rate=Fs)
 
-with col2:
-    convolved2 = fftconvolve(data.astype(np.float32), time_domain_response2, mode="full")
+with col4:
+    st.subheader("🔊 Convolt result")
+    convolved22 = fftconvolve(data,amplitudes_selectionnees_col2_db) 
+
+    st.write("Son a tester")
+    
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(20*np.log10(np.abs(convolved22)))
+    plt.xlim(0,10000)
+    plt.xlabel("Time")
+    plt.ylabel("Amplitude (dB)")
+    plt.title("Convolved original sound with 2")
+    plt.grid(True)
+    st.pyplot(plt)
+
+    
+
+    st.audio(convolved22,sample_rate=Fs)
+    convolved2 = fftconvolve(data, time_domain_response2, mode="full")
     st.subheader("🔊 Convolved result")
     st.write("Audio perceived as 1")
     st.audio(convolved2,sample_rate=Fs)
