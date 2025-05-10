@@ -13,6 +13,7 @@ from scipy.io import wavfile
 from scipy.signal import fftconvolve
 import tempfile
 import os
+from scipy.signal import lfilter
 
 # Chemin absolu depuis le fichier Python courant
 base_dir = os.path.dirname(__file__)
@@ -219,6 +220,7 @@ with col1:
 
         # 4. Calculer l'IFFT
         time_domain_response1 = np.fft.ifft(full_spectrum_linear1)
+
         time_domain_response_db1 = 20 * np.log10(np.abs(time_domain_response1))
         # Afficher la réponse impulsionnelle
         st.subheader("Estimated Impulse Response")
@@ -295,7 +297,21 @@ col3,col4=st.columns(2)
 
 with col3:
     st.subheader("🔊 Convolt result")
-    convolved11=fftconvolve(data,amplitudes_selectionnees_col1_db,mode="full")
+    # 1. Conversion dB → linéaire
+    amplitudes_lin = 10**(amplitudes_selectionnees_col1_db / 20)
+
+    # 2. Ajouter une phase nulle (sinon pas de partie imaginaire)
+    spectre = amplitudes_lin
+
+    # 3. Reconstruire la symétrie hermitienne (pour signal réel)
+    spectre_complet = np.concatenate([spectre, np.conj(spectre[-2:0:-1])])
+
+    # 4. IFFT → signal temporel
+    signal_temps = np.fft.ifft(spectre_complet).real
+
+    # 5. Convolution avec un autre signal
+    convolved11 = fftconvolve(data, signal_temps, mode="full")
+
 
     plt.figure(figsize=(8, 6))
     plt.plot(20*np.log10(np.abs(convolved11)))
@@ -306,16 +322,46 @@ with col3:
     plt.grid(True)
     st.pyplot(plt)
 
-    st.audio(convolved11,sample_rate=Fs)
+    st.audio(convolved11,sample_rate=sample_rate)
 
-    convolved1 = fftconvolve(data, time_domain_response1, mode="full")
     st.subheader("🔊 Convolved result")
     st.write("Audio perceived as 2")
-    st.audio(convolved1,sample_rate=Fs)
+
+    convolved1 = fftconvolve(data, time_domain_response1)
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(20*np.log10(np.abs(convolved1)))
+    plt.xlim(0,10000)
+    plt.xlabel("Time")
+    plt.ylabel("Amplitude (dB)")
+    plt.title("Convolved original sound with 1")
+    plt.grid(True)
+    st.pyplot(plt)
+
+    # 1. Convolution en mode 'same' (durée originale)
+
+
+    st.audio(convolved1,sample_rate=sample_rate)
+
+
 
 with col4:
     st.subheader("🔊 Convolt result")
-    convolved22 = fftconvolve(data,amplitudes_selectionnees_col2_db) 
+
+    # 1. Conversion dB → linéaire
+    amplitudes_lin = 10**(amplitudes_selectionnees_col2_db / 20)
+
+    # 2. Ajouter une phase nulle (sinon pas de partie imaginaire)
+    spectre = amplitudes_lin
+
+    # 3. Reconstruire la symétrie hermitienne (pour signal réel)
+    spectre_complet = np.concatenate([spectre, np.conj(spectre[-2:0:-1])])
+
+    # 4. IFFT → signal temporel
+    signal_temps = np.fft.ifft(spectre_complet).real
+
+    # 5. Convolution avec un autre signal
+    convolved22 = fftconvolve(data, signal_temps, mode="full")
     
 
     plt.figure(figsize=(8, 6))
@@ -329,12 +375,24 @@ with col4:
 
     
 
-    st.audio(convolved22,sample_rate=Fs)
-    convolved2 = fftconvolve(data, time_domain_response2, mode="full")
+    st.audio(convolved22,sample_rate=sample_rate)
     st.subheader("🔊 Convolved result")
     st.write("Audio perceived as 1")
-    st.audio(convolved2,sample_rate=Fs)
+    convolved2 = fftconvolve(data, time_domain_response2, mode="full")
 
+    plt.figure(figsize=(8, 6))
+    plt.plot(20*np.log10(np.abs(convolved2)))
+    plt.xlim(0,10000)
+    plt.xlabel("Time")
+    plt.ylabel("Amplitude (dB)")
+    plt.title("Convolved original sound with 1")
+    plt.grid(True)
+    st.pyplot(plt)
+
+
+
+    
+    st.audio(convolved2,sample_rate=sample_rate)
 
 with st.expander("📘 Theory explanations"):
     st.markdown("### 🎧 Why Fourier Transform?")
