@@ -17,7 +17,7 @@ from scipy.signal import lfilter
 
 # Chemin absolu depuis le fichier Python courant
 base_dir = os.path.dirname(__file__)
-audio_path = os.path.join(base_dir, "assets", "beth.wav")
+audio_path = os.path.join(base_dir, "assets", "stereo.wav")
 
 # Fonction pour générer le signal Chirp exponentiel
 def generate_chirp_exp(dur, freq_start, freq_end, Fs=44100):
@@ -219,7 +219,7 @@ with col1:
         st.pyplot(plt)
 
         # 4. Calculer l'IFFT
-        time_domain_response1 = np.fft.ifft(full_spectrum_linear1)
+        time_domain_response1 = np.fft.ifft(full_spectrum_linear1).real
 
         time_domain_response_db1 = 20 * np.log10(np.abs(time_domain_response1))
         # Afficher la réponse impulsionnelle
@@ -275,7 +275,7 @@ with col2:
         st.pyplot(plt)
 
         # 4. Calculer l'IFFT
-        time_domain_response2 = np.fft.ifft(full_spectrum_linear2)
+        time_domain_response2 = np.fft.ifft(full_spectrum_linear2).real
         time_domain_response_db2 = 20 * np.log10(np.abs(time_domain_response2))
         # Afficher la réponse impulsionnelle
         st.subheader("Estimated Impulse Response")
@@ -292,6 +292,8 @@ with col2:
 st.subheader("🔊 Original sound")
 st.audio(audio_path, format="audio/wav")
 sample_rate, data = wavfile.read(audio_path)
+left_channel = data[:, 0]
+right_channel = data[:, 1]
 
 col3,col4=st.columns(2)
 
@@ -310,7 +312,16 @@ with col3:
     signal_temps = np.fft.ifft(spectre_complet).real
 
     # 5. Convolution avec un autre signal
-    convolved11 = fftconvolve(data, signal_temps, mode="full")
+
+
+
+    # Appliquer la convolution FFT pour chaque canal
+    convolved_left = fftconvolve(left_channel, signal_temps, mode="full")
+    convolved_right = fftconvolve(right_channel, signal_temps, mode="full")
+
+    # Recombiner les deux canaux
+    convolved11 = np.stack([convolved_left, convolved_right], axis=1)
+
 
 
     plt.figure(figsize=(8, 6))
@@ -322,12 +333,25 @@ with col3:
     plt.grid(True)
     st.pyplot(plt)
 
-    st.audio(convolved11,sample_rate=sample_rate)
+    convolved11 /= np.max(np.abs(convolved11) + 1e-6)
+
+    buffer1 = io.BytesIO()
+    sf.write(buffer1, convolved11, sample_rate, format='WAV')
+    st.audio(buffer1.getvalue(), format='audio/wav')
+
 
     st.subheader("🔊 Convolved result")
     st.write("Audio perceived as 2")
 
-    convolved1 = fftconvolve(data, time_domain_response1)
+
+
+    convolved_left = fftconvolve(left_channel, time_domain_response1, mode="full")
+    convolved_right = fftconvolve(right_channel, time_domain_response1, mode="full")
+
+    convolved1 = np.stack([convolved_left, convolved_right], axis=1)
+
+    convolved1 /= np.max(np.abs(convolved1) + 1e-6)
+
 
     plt.figure(figsize=(8, 6))
     plt.plot(20*np.log10(np.abs(convolved1)))
@@ -338,10 +362,10 @@ with col3:
     plt.grid(True)
     st.pyplot(plt)
 
-    # 1. Convolution en mode 'same' (durée originale)
 
-
-    st.audio(convolved1,sample_rate=sample_rate)
+    buffer2 = io.BytesIO()
+    sf.write(buffer2, convolved1, sample_rate, format='WAV')
+    st.audio(buffer2.getvalue(), format='audio/wav')
 
 
 
@@ -361,7 +385,13 @@ with col4:
     signal_temps = np.fft.ifft(spectre_complet).real
 
     # 5. Convolution avec un autre signal
-    convolved22 = fftconvolve(data, signal_temps, mode="full")
+
+    convolved_left = fftconvolve(left_channel, signal_temps, mode="full")
+    convolved_right = fftconvolve(right_channel, signal_temps, mode="full")
+
+    # Recombiner les deux canaux
+    convolved22 = np.stack([convolved_left, convolved_right], axis=1)
+
     
 
     plt.figure(figsize=(8, 6))
@@ -374,11 +404,25 @@ with col4:
     st.pyplot(plt)
 
     
+    convolved22 /= np.max(np.abs(convolved22) + 1e-6)
 
-    st.audio(convolved22,sample_rate=sample_rate)
+    buffer1 = io.BytesIO()
+    sf.write(buffer1, convolved22, sample_rate, format='WAV')
+    st.audio(buffer1.getvalue(), format='audio/wav')
+
+
     st.subheader("🔊 Convolved result")
     st.write("Audio perceived as 1")
-    convolved2 = fftconvolve(data, time_domain_response2, mode="full")
+
+
+
+    convolved_left = fftconvolve(left_channel, time_domain_response2, mode="full")
+    convolved_right = fftconvolve(right_channel, time_domain_response2, mode="full")
+
+    # Recombiner les deux canaux
+    convolved2 = np.stack([convolved_left, convolved_right], axis=1)
+
+
 
     plt.figure(figsize=(8, 6))
     plt.plot(20*np.log10(np.abs(convolved2)))
@@ -389,10 +433,13 @@ with col4:
     plt.grid(True)
     st.pyplot(plt)
 
+    convolved2 /= np.max(np.abs(convolved2) + 1e-6)
+
+    buffer2 = io.BytesIO()
+    sf.write(buffer2, convolved2, sample_rate, format='WAV')
+    st.audio(buffer2.getvalue(), format='audio/wav')
 
 
-    
-    st.audio(convolved2,sample_rate=sample_rate)
 
 with st.expander("📘 Theory explanations"):
     st.markdown("### 🎧 Why Fourier Transform?")
@@ -432,3 +479,23 @@ This gives us the **difference in perception** for each frequency \( f \). We co
     st.latex(r"y[n] = x[n] * h[n] = \sum_{k=-\infty}^{\infty} x[k] \cdot h[n-k]")
 
     st.markdown("This results in a new sound 𝑦[𝑛]y[n]: the original audio, transformed to simulate how the other person would perceive it.")
+
+
+
+
+# import soundfile as sf
+# import numpy as np
+
+# # Charger le fichier mono
+# data, samplerate = sf.read(audio_path)  # data: (N,)
+
+# # Vérifier que c'est bien mono
+# if data.ndim == 1:
+#     # Dupliquer le canal gauche pour créer un signal stéréo
+#     stereo_data = np.stack([data, data], axis=1)  # shape: (N, 2)
+
+#     # Sauvegarder en stéréo
+#     sf.write("stereo.wav", stereo_data, samplerate)
+#     print("Fichier stéréo créé avec succès.")
+# else:
+#     print("Ce fichier est déjà stéréo.")
