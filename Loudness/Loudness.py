@@ -262,7 +262,7 @@ with col1:
         plt.plot(DOUBLE_FREQUENCIES, full_spectrum_linear1)
         plt.xlabel("Frequency (Hz)")
         plt.ylabel("Amplitude")
-        plt.title("Linear Spectrum")
+        plt.title("Linear Symmetric Spectrum")
         plt.grid(True)
         st.pyplot(plt)
 
@@ -333,7 +333,7 @@ with col2:
         plt.plot(DOUBLE_FREQUENCIES, full_spectrum_linear2)
         plt.xlabel("Frequency (Hz)")
         plt.ylabel("Amplitude")
-        plt.title("Symmetric Spectrum")
+        plt.title("Linear Symmetric Spectrum")
         plt.grid(True)
         st.pyplot(plt)
 
