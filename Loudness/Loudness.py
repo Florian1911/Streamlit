@@ -19,15 +19,15 @@ from scipy.signal import lfilter
 base_dir = os.path.dirname(__file__)
 audio_path = os.path.join(base_dir, "assets", "stereo.wav")
 
-# Fonction pour générer le signal Chirp exponentiel
+# Fonction pour générer un chirp exponentiel (balayage fréquentiel progressif)
 def generate_chirp_exp(dur, freq_start, freq_end, Fs=44100):
-    N = int(dur * Fs)
-    t = np.arange(N) / Fs
-    freq = np.exp(np.linspace(np.log(freq_start), np.log(freq_end), N))
+    N = int(dur * Fs)  # Nombre d'échantillons
+    t = np.arange(N) / Fs  # Axe temporel
+    freq = np.exp(np.linspace(np.log(freq_start), np.log(freq_end), N))  # Évolution fréquentielle
     phases = np.zeros(N)
     for n in range(1, N):
-        phases[n] = phases[n-1] + 2 * np.pi * freq[n-1] / Fs
-    x = np.sin(phases)
+        phases[n] = phases[n-1] + 2 * np.pi * freq[n-1] / Fs  # Phase cumulée
+    x = np.sin(phases)  # Signal audio final
     return x, t, freq
 
 def read_audio_from_wav(audio_file):
@@ -38,12 +38,9 @@ def read_audio_from_wav(audio_file):
 # Enregistrement du signal audio dans un fichier temporaire .wav
 def save_audio_to_wav(signal, sample_rate, filename="output.wav"):
     """Sauvegarde le signal en fichier WAV sans le normaliser"""
-    signal_int16 = np.int16(signal)
+    signal_int16 = np.int16(signal)  # Conversion en format 16 bits
     write(filename, sample_rate, signal_int16)
     return filename
-
-# Fréquence d'échantillonnage
-Fs = 44100
 
 st.title("Hear with my ears")
 
@@ -63,23 +60,19 @@ Take your time to listen to each frequency, adjust based on your perception, and
 # Génération du signal Chirp exponentiel
 st.header("Exponential Chirp and Analysis")
 
-# Entrées de l'utilisateur pour personnaliser le signal Chirp
-
+# Paramètres de génération du chirp
 freq_start = 30
-freq_end=18000
-dur=10
+freq_end = 18000
+dur = 10
+Fs = 44100  # Fréquence d'échantillonnage
 
 x, t, freq = generate_chirp_exp(dur, freq_start=freq_start, freq_end=freq_end, Fs=Fs)
 
-fig, ax = plt.subplots(1, 1, gridspec_kw={'width_ratios': [2]}, figsize=(7, 3))
-
-# Transformée de Fourier pour afficher le spectrogramme
+# Affichage du spectrogramme du chirp pour vérification visuelle
+fig, ax = plt.subplots(figsize=(7, 3))
 N, H = 1024, 512
-X = librosa.stft(x, n_fft=N, hop_length=H, win_length=N)
-libfmp.b.plot_matrix(np.log(1 + np.abs(X)), Fs=Fs / H, Fs_F=N / Fs, ax=[ax],
-                     title='Spectrogram of chirp', colorbar=False)
-
-plt.tight_layout()
+X = librosa.stft(x, n_fft=N, hop_length=H, win_length=N)  # Transformée de Fourier sur fenêtres
+libfmp.b.plot_matrix(np.log(1 + np.abs(X)), Fs=Fs / H, Fs_F=N / Fs, ax=[ax], title='Spectrogram of chirp', colorbar=False)
 st.pyplot(fig)
 
 # Lecture du son
@@ -102,84 +95,131 @@ amplitudes = [0.001, 0.01, 0.1, 0.5, 1, 2, 5]
 # Liste pour stocker les amplitudes sélectionnées
 amplitudes_selectionnees = []
 
-MAX_INT16 = 32767
+MAX_INT16 = 32767 # Amplitude maximale pour un entier 16 bits
 DURATION = 2
 
+# Création de deux colonnes pour les deux utilisateurs
 col1, col2 = st.columns(2)
 
+# Bloc pour la première colonne d’interaction utilisateur
 with col1:
+    # Boucle sur chaque fréquence définie dans FREQUENCIES
     for i, freq in enumerate(FREQUENCIES):
+        # Affiche la fréquence courante
         st.write(f"Frequency : {freq} Hz")
 
-        # Slider pour contrôler l'amplitude réelle du signal
+        # Crée un curseur pour permettre à l’utilisateur de régler l’amplitude du signal pour chaque fréquence
         amplitude_selectionnee = st.slider(
-            f"Amplitude for {freq} Hz", min_value=0.0, max_value=1.0, value=0.5, step=0.01, key=f"col1_{i}",help="Select the signal amplitude for this frequency"
+            f"Amplitude for {freq} Hz",  # Légende du slider
+            min_value=0.0,               # Amplitude minimale (silence)
+            max_value=1.0,               # Amplitude maximale (pleine échelle)
+            value=0.5,                   # Valeur initiale par défaut
+            step=0.01,                   # Pas du curseur
+            key=f"col1_{i}",             # Clé unique pour éviter les conflits dans Streamlit
+            help="Select the signal amplitude for this frequency"  # Info bulle
         )
+        # Enregistre l’amplitude sélectionnée dans une liste
         amplitudes_selectionnees_col1.append(amplitude_selectionnee)
 
-        # Génération du signal avec l'amplitude choisie
+        # Génère un vecteur de temps pour la durée spécifiée
         temps = np.linspace(0, DURATION, int(Fs * DURATION), endpoint=False)
+
+        # Génère un signal sinusoïdal avec la fréquence et l’amplitude choisies
         signal = amplitude_selectionnee * MAX_INT16 * np.sin(2 * np.pi * freq * temps)
 
-        # Sauvegarde du fichier audio avec l'amplitude réelle
+        # Convertit le signal en fichier WAV temporaire
         audio_file = save_audio_to_wav(signal, Fs)
 
-        # Affichage de l'audio avec amplitude ajustable
+        # Affiche un lecteur audio pour écouter le signal généré
         st.audio(audio_file, format="audio/wav")
-        # Affichage de la courbe Amplitude vs Fréquence pour la première colonne
-    amplitudes_selectionnees_col1_db = 20 * np.log10(np.array(amplitudes_selectionnees_col1))
 
+    # Convertit les amplitudes en dB pour l'affichage graphique (évite les erreurs log(0))
+    amplitudes_selectionnees_col1_db = 20 * np.log10(np.array(amplitudes_selectionnees_col1) + 1e-12)
+
+    # Vérifie si toutes les fréquences ont une amplitude sélectionnée
     if len(amplitudes_selectionnees_col1) == len(FREQUENCIES):
+        # Affiche le titre du graphique
         st.write("Amplitude versus frequency curve (Column 1)")
+
+        # Crée le graphique Amplitude (en dB) vs Fréquence
         plt.figure(figsize=(8, 6))
         plt.plot(FREQUENCIES, amplitudes_selectionnees_col1_db, marker='o', linestyle='-', color='b')
         plt.xlabel("Frequency (Hz)")
         plt.ylabel("Amplitude (dB)")
         plt.title("Amplitude versus frequency curve (Column 1)")
         plt.grid(True)
+
+        # Affiche le graphique dans Streamlit
         st.pyplot(plt)
     else:
+        # Message si l'utilisateur n’a pas sélectionné toutes les amplitudes
         st.write("Please select an amplitude for each frequency in column 1.")
 
-# Deuxième colonne
+
+# Bloc pour la deuxième colonne d’interaction utilisateur
 with col2:
+    # Boucle sur chaque fréquence définie dans FREQUENCIES
     for i, freq in enumerate(FREQUENCIES):
+        # Affiche la fréquence courante
         st.write(f"Frequency : {freq} Hz")
 
-        # Slider pour contrôler l'amplitude réelle du signal
+        # Crée un curseur pour permettre à l’utilisateur de régler l’amplitude du signal pour chaque fréquence
         amplitude_selectionnee = st.slider(
-            f"Amplitude for {freq} Hz", min_value=0.0, max_value=1.0, value=0.5, step=0.01, key=f"col2_{i}",help="Select the signal amplitude for this frequency"
+            f"Amplitude for {freq} Hz",  # Légende du slider
+            min_value=0.0,               # Amplitude minimale
+            max_value=1.0,               # Amplitude maximale
+            value=0.5,                   # Valeur initiale
+            step=0.01,                   # Pas d’ajustement du slider
+            key=f"col2_{i}",             # Clé unique pour éviter les conflits avec les sliders de col1
+            help="Select the signal amplitude for this frequency"  # Info bulle
         )
+        # Enregistre l’amplitude sélectionnée dans une liste
         amplitudes_selectionnees_col2.append(amplitude_selectionnee)
 
-        # Génération du signal avec l'amplitude choisie
+        # Génère un vecteur temps pour la durée spécifiée
         temps = np.linspace(0, DURATION, int(Fs * DURATION), endpoint=False)
+
+        # Génère le signal sinusoïdal avec la fréquence et l’amplitude sélectionnées
         signal = amplitude_selectionnee * MAX_INT16 * np.sin(2 * np.pi * freq * temps)
 
-        # Sauvegarde du fichier audio avec l'amplitude réelle
+        # Sauvegarde le signal sous forme de fichier audio WAV
         audio_file = save_audio_to_wav(signal, Fs)
 
-        # Affichage de l'audio avec amplitude ajustable
+        # Affiche un lecteur audio dans Streamlit pour écouter le signal
         st.audio(audio_file, format="audio/wav")
-        # Affichage de la courbe Amplitude vs Fréquence pour la deuxième colonne
-    amplitudes_selectionnees_col2_db = 20 * np.log10(np.array(amplitudes_selectionnees_col2))    
+
+    # Convertit les amplitudes en dB pour le tracé du graphique
+    amplitudes_selectionnees_col2_db = 20 * np.log10(np.array(amplitudes_selectionnees_col2) + 1e-12)
+
+    # Vérifie que toutes les fréquences ont une amplitude sélectionnée
     if len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
+        # Affiche un titre descriptif du graphique
         st.write("Amplitude versus frequency curve (Column 2)")
+
+        # Trace la courbe d’amplitude (en dB) en fonction de la fréquence
         plt.figure(figsize=(8, 6))
         plt.plot(FREQUENCIES, amplitudes_selectionnees_col2_db, marker='o', linestyle='-', color='r')
         plt.xlabel("Frequency (Hz)")
         plt.ylabel("Amplitude (dB)")
         plt.title("Amplitude versus frequency curve (Column 2)")
         plt.grid(True)
+
+        # Affiche le graphique dans l’interface Streamlit
         st.pyplot(plt)
     else:
+        # Affiche un message si toutes les amplitudes ne sont pas encore réglées
         st.write("Please select an amplitude for each frequency in column 2.")
 
 
-# Calculer la fonction de transfert entre les deux colonnes
+# Bloc de traitement dans la première colonne (col1)
 with col1:
+    # Vérifie que l'utilisateur a sélectionné une amplitude pour chaque fréquence dans les deux colonnes
     if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
+        
+        # Calcul de la fonction de transfert en dB (différence entre colonne 2 et colonne 1)
         transfer_function_db1 = amplitudes_selectionnees_col2_db - amplitudes_selectionnees_col1_db
+        
+        # Affichage de la courbe de différence d’amplitude
         st.header("Amplitude difference to be applied (2-1)")
         plt.figure(figsize=(8, 6))
         plt.plot(FREQUENCIES, transfer_function_db1, marker='o', linestyle='-', color='g')
@@ -189,43 +229,53 @@ with col1:
         plt.grid(True)
         st.pyplot(plt)
 
+        # Titre pour la section de calcul IFFT (transformation inverse de Fourier)
         st.header("Inverse FFT")
 
-        # 1. Convertir la fonction de transfert de dB à l'échelle linéaire
+        # Étape 1 : Convertir les valeurs de dB vers une échelle linéaire
         transfer_function_linear1 = 10**(transfer_function_db1 / 20)
 
-        # 2. Créer un spectre symétrique
-        # On prend la moitié du spectre (fréquences positives)
+        # Étape 2 : Créer un spectre symétrique pour simuler une réponse réelle
+        # Partie positive du spectre (fréquences positives)
         positive_spectrum1 = transfer_function_linear1
 
-        negative_spectrum1 = positive_spectrum1[::-1] # On inverse l'ordre
+        # Partie négative du spectre : miroir de la partie positive (symétrie Hermitienne)
+        negative_spectrum1 = positive_spectrum1[::-1]  # Inverse les éléments
+
+        # On ajoute une amplitude "1" pour la fréquence 0 Hz dans la partie positive
         positive_spectrum1 = np.insert(positive_spectrum1, 0, 1)
 
-        negative_frequency1 = -np.array(FREQUENCIES[::-1])
-        positive_frequency1= np.array(FREQUENCIES)
-        positive_frequency1 = np.insert(positive_frequency1, 0, 0)
-        DOUBLE_FREQUENCIES = np.concatenate((negative_frequency1,positive_frequency1))
+        # Préparation des fréquences pour l'affichage (axes X)
+        negative_frequency1 = -np.array(FREQUENCIES[::-1])  # Fréquences négatives (miroir)
+        positive_frequency1 = np.array(FREQUENCIES)
+        positive_frequency1 = np.insert(positive_frequency1, 0, 0)  # Ajoute 0 Hz
 
-        full_spectrum_linear1 = np.concatenate((negative_spectrum1,positive_spectrum1))
+        # Fusion des fréquences pour former un spectre double (X-axis complet)
+        DOUBLE_FREQUENCIES = np.concatenate((negative_frequency1, positive_frequency1))
 
-        # Afficher le spectre symétrique
+        # Fusion des amplitudes pour former le spectre symétrique complet (Y-axis)
+        full_spectrum_linear1 = np.concatenate((negative_spectrum1, positive_spectrum1))
+
+        # Affiche le spectre symétrique complet en échelle linéaire
         st.subheader("Linear Symmetric Spectrum")
         plt.figure(figsize=(8, 6))
-        plt.plot(DOUBLE_FREQUENCIES,full_spectrum_linear1)
+        plt.plot(DOUBLE_FREQUENCIES, full_spectrum_linear1)
         plt.xlabel("Frequency (Hz)")
         plt.ylabel("Amplitude")
         plt.title("Linear Spectrum")
         plt.grid(True)
         st.pyplot(plt)
 
-        # 4. Calculer l'IFFT
-        time_domain_response1 = np.fft.ifft(full_spectrum_linear1).real
+        # Étape 4 : Appliquer la transformation de Fourier inverse (IFFT)
+        time_domain_response1 = np.fft.ifft(full_spectrum_linear1).real  # Prend uniquement la partie réelle
 
-        time_domain_response_db1 = 20 * np.log10(np.abs(time_domain_response1))
-        # Afficher la réponse impulsionnelle
+        # Conversion de la réponse temporelle en dB pour l’affichage
+        time_domain_response_db1 = 20 * np.log10(np.abs(time_domain_response1) + 1e-12)  # On ajoute 1e-12 pour éviter log(0)
+
+        # Affichage de la réponse impulsionnelle estimée
         st.subheader("Estimated Impulse Response")
         plt.figure(figsize=(8, 6))
-        plt.plot((time_domain_response_db1))
+        plt.plot(time_domain_response_db1)
         plt.xlabel("Time")
         plt.ylabel("Amplitude (dB)")
         plt.title("Impulse Response")
@@ -233,9 +283,16 @@ with col1:
         st.pyplot(plt)
 
 
+
+# Bloc de traitement dans la deuxième colonne (col2)
 with col2:
+    # Vérifie que l’utilisateur a sélectionné une amplitude pour chaque fréquence dans les deux colonnes
     if len(amplitudes_selectionnees_col1) == len(FREQUENCIES) and len(amplitudes_selectionnees_col2) == len(FREQUENCIES):
+        
+        # Calcul de la fonction de transfert inverse : colonne 1 - colonne 2
         transfer_function_db2 = amplitudes_selectionnees_col1_db - amplitudes_selectionnees_col2_db
+        
+        # Affichage de la différence d'amplitude (fonction de transfert) dans le sens inverse
         st.header("Amplitude difference to be applied (1-2)")
         plt.figure(figsize=(8, 6))
         plt.plot(FREQUENCIES, transfer_function_db2, marker='o', linestyle='-', color='g')
@@ -245,199 +302,222 @@ with col2:
         plt.grid(True)
         st.pyplot(plt)
 
+        # Titre pour la section de transformation de Fourier inverse
         st.header("Inverse FFT")
 
-        # 1. Convertir la fonction de transfert de dB à l'échelle linéaire
+        # Étape 1 : Convertir la fonction de transfert de dB à une échelle linéaire
         transfer_function_linear2 = 10**(transfer_function_db2 / 20)
 
-        # 2. Créer un spectre symétrique
-        # On prend la moitié du spectre (fréquences positives)
+        # Étape 2 : Créer un spectre symétrique
+        # Partie positive (fréquences mesurées)
         positive_spectrum2 = transfer_function_linear2
 
-        negative_spectrum2 = positive_spectrum2[::-1] # On inverse l'ordre
+        # Partie négative (miroir de la partie positive)
+        negative_spectrum2 = positive_spectrum2[::-1]
+
+        # Ajout de la composante continue (0 Hz) avec un gain unitaire
         positive_spectrum2 = np.insert(positive_spectrum2, 0, 1)
 
-        negative_frequency2 = -np.array(FREQUENCIES[::-1])
-        positive_frequency2= np.array(FREQUENCIES)
-        positive_frequency2 = np.insert(positive_frequency2, 0, 0)
-        DOUBLE_FREQUENCIES = np.concatenate((negative_frequency2,positive_frequency2))
+        # Préparation des fréquences pour affichage (X-axis)
+        negative_frequency2 = -np.array(FREQUENCIES[::-1])  # Fréquences négatives
+        positive_frequency2 = np.array(FREQUENCIES)
+        positive_frequency2 = np.insert(positive_frequency2, 0, 0)  # Inclut 0 Hz
+        DOUBLE_FREQUENCIES = np.concatenate((negative_frequency2, positive_frequency2))
 
-        full_spectrum_linear2 = np.concatenate((negative_spectrum2,positive_spectrum2))
+        # Construction du spectre complet en amplitude
+        full_spectrum_linear2 = np.concatenate((negative_spectrum2, positive_spectrum2))
 
-        # Afficher le spectre symétrique
+        # Affichage du spectre linéaire symétrique
         st.subheader("Linear Symmetric Spectrum")
         plt.figure(figsize=(8, 6))
-        plt.plot(DOUBLE_FREQUENCIES,full_spectrum_linear2)
+        plt.plot(DOUBLE_FREQUENCIES, full_spectrum_linear2)
         plt.xlabel("Frequency (Hz)")
         plt.ylabel("Amplitude")
-        plt.title("Symetric Spectrum")
+        plt.title("Symmetric Spectrum")
         plt.grid(True)
         st.pyplot(plt)
 
-        # 4. Calculer l'IFFT
-        time_domain_response2 = np.fft.ifft(full_spectrum_linear2).real
-        time_domain_response_db2 = 20 * np.log10(np.abs(time_domain_response2))
-        # Afficher la réponse impulsionnelle
+        # Étape 4 : Calcul de la réponse impulsionnelle via IFFT
+        time_domain_response2 = np.fft.ifft(full_spectrum_linear2).real  # On garde uniquement la partie réelle
+
+        # Conversion de la réponse temporelle en dB (ajout d’un epsilon pour éviter log(0))
+        time_domain_response_db2 = 20 * np.log10(np.abs(time_domain_response2) + 1e-12)
+
+        # Affichage de la réponse impulsionnelle estimée
         st.subheader("Estimated Impulse Response")
         plt.figure(figsize=(8, 6))
-        plt.plot((time_domain_response_db2))
+        plt.plot(time_domain_response_db2)
         plt.xlabel("Time")
         plt.ylabel("Amplitude (dB)")
         plt.title("Impulse Response")
         plt.grid(True)
         st.pyplot(plt)
 
+# -----------------------------------------
+# Affichage du son original importé par l'utilisateur
+# -----------------------------------------
 
-
+# Titre pour la section du son original
 st.subheader("🔊 Original sound")
+
+# Lecture de l’audio via Streamlit
 st.audio(audio_path, format="audio/wav")
+
+# Lecture des données audio avec scipy.io.wavfile
 sample_rate, data = wavfile.read(audio_path)
-left_channel = data[:, 0]
-right_channel = data[:, 1]
 
-col3,col4=st.columns(2)
+# Séparation des deux canaux stéréo
+left_channel = data[:, 0]  # Canal gauche
+right_channel = data[:, 1]  # Canal droit
 
+
+# Création de deux colonnes côte à côte
+col3, col4 = st.columns(2)
+
+# -----------------------------------
+# Colonne 3 : Convolution et affichage du résultat pour la colonne 1
+# -----------------------------------
 with col3:
     st.subheader("🔊 Convolt result")
-    # 1. Conversion dB → linéaire
+
+    # 1. Conversion des amplitudes en dB vers échelle linéaire
     amplitudes_lin = 10**(amplitudes_selectionnees_col1_db / 20)
 
-    # 2. Ajouter une phase nulle (sinon pas de partie imaginaire)
+    # 2. On ajoute une phase nulle (réelle, pas de partie imaginaire) pour la reconstruction du spectre
     spectre = amplitudes_lin
 
-    # 3. Reconstruire la symétrie hermitienne (pour signal réel)
+    # 3. Reconstruction du spectre complet (symétrie hermitienne) pour garantir un signal réel en temps
+    # On prend le spectre et on y ajoute sa partie conjuguée inversée (sauf la première et dernière valeur)
     spectre_complet = np.concatenate([spectre, np.conj(spectre[-2:0:-1])])
 
-    # 4. IFFT → signal temporel
+    # 4. Calcul de la transformée de Fourier inverse (IFFT) pour obtenir le signal temporel
     signal_temps = np.fft.ifft(spectre_complet).real
 
-    # 5. Convolution avec un autre signal
-
-
-
-    # Appliquer la convolution FFT pour chaque canal
+    # 5. Convolution du signal original (gauche et droite) avec le signal temporel calculé
     convolved_left = fftconvolve(left_channel, signal_temps, mode="full")
     convolved_right = fftconvolve(right_channel, signal_temps, mode="full")
 
-    # Recombiner les deux canaux
+    # Recombinaison des canaux gauche et droite en un signal stéréo
     convolved11 = np.stack([convolved_left, convolved_right], axis=1)
 
-
-
+    # Affichage graphique du signal convolué en dB
     plt.figure(figsize=(8, 6))
-    plt.plot(20*np.log10(np.abs(convolved11)))
-    plt.xlim(0,10000)
+    plt.plot(20 * np.log10(np.abs(convolved11)))
+    plt.xlim(0, 10000)
     plt.xlabel("Time")
     plt.ylabel("Amplitude (dB)")
     plt.title("Convolved original sound with 1")
     plt.grid(True)
     st.pyplot(plt)
 
+    # Normalisation du signal convolué pour éviter la saturation audio
     convolved11 /= np.max(np.abs(convolved11) + 1e-6)
 
+    # Sauvegarde en buffer mémoire au format WAV
     buffer1 = io.BytesIO()
     sf.write(buffer1, convolved11, sample_rate, format='WAV')
-    st.audio(buffer1.getvalue(), format='audio/wav')
 
+    # Lecture audio du résultat convolué
+    st.audio(buffer1.getvalue(), format='audio/wav')
 
     st.subheader("🔊 Convolved result")
     st.write("Audio perceived as 2")
 
-
-
+    # Convolution avec la réponse impulsionnelle estimée (time_domain_response1 calculée précédemment)
     convolved_left = fftconvolve(left_channel, time_domain_response1, mode="full")
     convolved_right = fftconvolve(right_channel, time_domain_response1, mode="full")
 
+    # Recombinaison des canaux
     convolved1 = np.stack([convolved_left, convolved_right], axis=1)
 
+    # Normalisation
     convolved1 /= np.max(np.abs(convolved1) + 1e-6)
 
-
+    # Affichage graphique
     plt.figure(figsize=(8, 6))
-    plt.plot(20*np.log10(np.abs(convolved1)))
-    plt.xlim(0,10000)
+    plt.plot(20 * np.log10(np.abs(convolved1)))
+    plt.xlim(0, 10000)
     plt.xlabel("Time")
     plt.ylabel("Amplitude (dB)")
     plt.title("Convolved original sound with 1")
     plt.grid(True)
     st.pyplot(plt)
 
-
+    # Sauvegarde et lecture audio
     buffer2 = io.BytesIO()
     sf.write(buffer2, convolved1, sample_rate, format='WAV')
     st.audio(buffer2.getvalue(), format='audio/wav')
 
-
-
+# -----------------------------------
+# Colonne 4 : Convolution et affichage du résultat pour la colonne 2
+# -----------------------------------
 with col4:
     st.subheader("🔊 Convolt result")
 
-    # 1. Conversion dB → linéaire
+    # 1. Conversion dB → linéaire pour la colonne 2
     amplitudes_lin = 10**(amplitudes_selectionnees_col2_db / 20)
 
-    # 2. Ajouter une phase nulle (sinon pas de partie imaginaire)
+    # 2. Phase nulle ajoutée
     spectre = amplitudes_lin
 
-    # 3. Reconstruire la symétrie hermitienne (pour signal réel)
+    # 3. Reconstruction du spectre symétrique (Hermitien)
     spectre_complet = np.concatenate([spectre, np.conj(spectre[-2:0:-1])])
 
-    # 4. IFFT → signal temporel
+    # 4. Calcul IFFT → signal temporel
     signal_temps = np.fft.ifft(spectre_complet).real
 
-    # 5. Convolution avec un autre signal
-
+    # 5. Convolution avec le signal original stéréo
     convolved_left = fftconvolve(left_channel, signal_temps, mode="full")
     convolved_right = fftconvolve(right_channel, signal_temps, mode="full")
 
-    # Recombiner les deux canaux
+    # Recombinaison stéréo
     convolved22 = np.stack([convolved_left, convolved_right], axis=1)
 
-    
-
+    # Affichage graphique du signal convolué
     plt.figure(figsize=(8, 6))
-    plt.plot(20*np.log10(np.abs(convolved22)))
-    plt.xlim(0,10000)
+    plt.plot(20 * np.log10(np.abs(convolved22)))
+    plt.xlim(0, 10000)
     plt.xlabel("Time")
     plt.ylabel("Amplitude (dB)")
     plt.title("Convolved original sound with 2")
     plt.grid(True)
     st.pyplot(plt)
 
-    
+    # Normalisation pour éviter saturation
     convolved22 /= np.max(np.abs(convolved22) + 1e-6)
 
+    # Sauvegarde et lecture
     buffer1 = io.BytesIO()
     sf.write(buffer1, convolved22, sample_rate, format='WAV')
     st.audio(buffer1.getvalue(), format='audio/wav')
 
-
     st.subheader("🔊 Convolved result")
     st.write("Audio perceived as 1")
 
-
-
+    # Convolution avec la réponse impulsionnelle estimée time_domain_response2
     convolved_left = fftconvolve(left_channel, time_domain_response2, mode="full")
     convolved_right = fftconvolve(right_channel, time_domain_response2, mode="full")
 
-    # Recombiner les deux canaux
+    # Recombinaison stéréo
     convolved2 = np.stack([convolved_left, convolved_right], axis=1)
 
-
-
+    # Affichage graphique du signal convolué avec la réponse impulsionnelle
     plt.figure(figsize=(8, 6))
-    plt.plot(20*np.log10(np.abs(convolved2)))
-    plt.xlim(0,10000)
+    plt.plot(20 * np.log10(np.abs(convolved2)))
+    plt.xlim(0, 10000)
     plt.xlabel("Time")
     plt.ylabel("Amplitude (dB)")
     plt.title("Convolved original sound with 1")
     plt.grid(True)
     st.pyplot(plt)
 
+    # Normalisation et sauvegarde finale
     convolved2 /= np.max(np.abs(convolved2) + 1e-6)
 
     buffer2 = io.BytesIO()
     sf.write(buffer2, convolved2, sample_rate, format='WAV')
     st.audio(buffer2.getvalue(), format='audio/wav')
+
 
 
 
