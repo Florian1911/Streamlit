@@ -1,3 +1,0 @@
-https://en.wikipedia.org/wiki/Fast_Fourier_transform
-https://en.wikipedia.org/wiki/Overlap%E2%80%93add_method
-https://ccrma.stanford.edu/~jos/OLA/OLA.pdf
