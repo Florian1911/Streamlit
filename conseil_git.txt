@@ -1,8 +1,0 @@
-Pour synchroniser le dépot distant avec le local (opposé du commit)
-
-    git pull origin main 
-
-est équivalent à :
-
-    git fetch origin
-    git merge origin/main
